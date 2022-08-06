@@ -21,7 +21,8 @@ function expand_ref_cigar() {
 # lengths : size of com[i *]/cts[i *]
 function break_cigar() {
 	for (i in cigs) {
-		split(cigs[i], comi, /[0-9]+/, ctsi)
+		split(cigs[i], comi, /[0-9]+/)
+		split(cigs[i], ctsi, /[A-Z]+/)
 		delete comi[1]
 		# storing elements in com[i j] and cts[i j]
 		lengths[i] = length(comi)
@@ -44,7 +45,7 @@ function print_cigar() {
 
 # print vector, one element at a line
 function print_array(ar,    i) {
-	for(i in ar) {
+	for(i=1; i<=N; i++) {
 		printf "%s\n", ar[i]
 	}
 }
