@@ -58,22 +58,13 @@ function rep(char, n) {
 }
 
 # find current (at icig) I commands, returning in v[] vector of their
-# indexes, but in order of their cts size (in case more than one present)
+# indexes, v[i]==1, tells com[i icig[k]] has an "I" command.
 function current_Is(v, icig,     k, savei) {
+	delete v
 	v[0] = 0 # number of I commands found
 	for (k=1; k<=N; k++) {
 		if (com[k icig[k]]=="I") {
-			# inserting in increasing order
-			if (v[0]==0) v[1] = k
-			else {
-				if (cts[k icig[k]] < cts[v[v[0]] icig[v[v[0]]]]) {
-					savei = v[v[0]]
-					v[v[0]] = k
-					v[v[0]+1] = savei
-				} else {
-					v[v[0]+1] = k
-				}
-			}
+			v[k] = 1
 			v[0]++
 		}
 	}
@@ -94,39 +85,35 @@ function naive_parser(  ended, i, done, v, toadd, out, iseq, icig) {
 		v[0] = 0
 		current_Is(v, icig)
 		if (v[0]>0) {
-			done = 0 # how many were inserted already
-			for (i=1; i<=v[0]; i++) {
-				# process command I at cigs[v[i] icig[i]]
-				toadd = cts[v[i] icig[v[i]]] - done
-				done = toadd + done
-				for (j=1; j<=N; j++) {
-					if (j!=v[i]) {
-						out[j] = sprintf("%s%s", out[j], rep(" ", toadd))
-					} else {
-						out[j] = sprintf("%s%s", out[j], substr(seqs[j], iseq[j], cts[j icig[j]]))
-						iseq[j]+=cts[j icig[j]]
-					}
+			# process command I
+			for (i=1; i<=N; i++) {
+				if (i in v) {
+					out[i] = sprintf("%s%s", out[i], substr(seqs[i], iseq[i], 1))
+					iseq[i]++
+					cts[i icig[i]]--
+					if (cts[i icig[i]]==0) icig[i]++
+				} else {
+					out[i] = sprintf("%s ", out[i])
 				}
-				cts[v[i] icig[v[i]]] = 0
-				icig[v[i]]++
 			}
-		}
-		# other commands
-		for (i=1; i<=N; i++) {
-			if (com[i icig[i]] == "X") {
-				out[i] = sprintf("%s%s", out[i], substr(seqs[i], iseq[i], 1))
-				iseq[i]++
-			} else if (com[i icig[i]] == "M") {
-				out[i] = sprintf("%s-", out[i])
-				iseq[i]++
-			} else if (com[i icig[i]] == "D") {
-				out[i] = sprintf("%s ", out[i])
+		} else {
+			# other commands
+			for (i=1; i<=N; i++) {
+				if (com[i icig[i]] == "X") {
+					out[i] = sprintf("%s%s", out[i], substr(seqs[i], iseq[i], 1))
+					iseq[i]++
+				} else if (com[i icig[i]] == "M") {
+					out[i] = sprintf("%s-", out[i])
+					iseq[i]++
+				} else if (com[i icig[i]] == "D") {
+					out[i] = sprintf("%s ", out[i])
+				}
+				else { print "--error--" }
+				cts[i icig[i]]--
+				if (cts[i icig[i]]==0) icig[i]++
+				# check processed all commands
+				if (icig[i]>lengths[i]) ended = 1
 			}
-			else { print "--error--" }
-			cts[i icig[i]]--
-			if (cts[i icig[i]]==0) icig[i]++
-			# check processed all commands
-			if (icig[i]>lengths[i]) ended = 1
 		}
 	}
 	# result stored back to seqs array
